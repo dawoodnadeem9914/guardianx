@@ -1,0 +1,275 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================================
+   GuardianX Design Tokens
+   Brand: Midnight Navy / Charcoal / Electric Teal
+   Red reserved exclusively for critical/emergency states.
+   ========================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* --- Brand core --- */
+  --gx-navy: #0f172a;
+  --gx-charcoal: #111827;
+  --gx-teal: #14b8a6;
+  --gx-teal-strong: #0d9488;
+  --gx-teal-soft: #5eead4;
+
+  /* --- Semantic --- */
+  --gx-critical: #ef4444;
+  --gx-critical-soft: #fecaca;
+  --gx-warning: #f59e0b;
+  --gx-warning-soft: #fde68a;
+  --gx-success: #22c55e;
+  --gx-success-soft: #bbf7d0;
+  --gx-info: #3b82f6;
+  --gx-info-soft: #bfdbfe;
+
+  /* --- Light mode surfaces (independently designed, not inverted dark) --- */
+  --background: #f8fafc;
+  --background-alt: #eef2f7;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --foreground: #0f172a;
+  --foreground-muted: #475569;
+  --foreground-subtle: #64748b;
+  --accent: var(--gx-teal-strong);
+  --accent-foreground: #ffffff;
+  --ring: var(--gx-teal-strong);
+  --shadow-color: 215 40% 20%;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --grid-line: rgba(15, 23, 42, 0.05);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #0b1120;
+  --background-alt: #0f172a;
+  --surface: #111827;
+  --surface-raised: #151f32;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --foreground: #f1f5f9;
+  --foreground-muted: #94a3b8;
+  --foreground-subtle: #64748b;
+  --accent: var(--gx-teal);
+  --accent-foreground: #04201c;
+  --ring: var(--gx-teal);
+  --shadow-color: 220 60% 3%;
+  --glass-bg: rgba(17, 24, 39, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --grid-line: rgba(255, 255, 255, 0.045);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-background-alt: var(--background-alt);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+
+  --color-navy: var(--gx-navy);
+  --color-charcoal: var(--gx-charcoal);
+  --color-teal: var(--gx-teal);
+  --color-teal-strong: var(--gx-teal-strong);
+  --color-teal-soft: var(--gx-teal-soft);
+
+  --color-critical: var(--gx-critical);
+  --color-critical-soft: var(--gx-critical-soft);
+  --color-warning: var(--gx-warning);
+  --color-warning-soft: var(--gx-warning-soft);
+  --color-success: var(--gx-success);
+  --color-success-soft: var(--gx-success-soft);
+  --color-info: var(--gx-info);
+  --color-info-soft: var(--gx-info-soft);
+
+  --font-sans: "SF Pro Display", "Inter", "Segoe UI", ui-sans-serif, system-ui, -apple-system,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, "Cascadia Code", Menlo, Consolas,
+    monospace;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-ecg: ecg-draw 3.2s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--gx-teal) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 14px color-mix(in srgb, var(--gx-teal) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--gx-teal) 0%, transparent);
+  }
+}
+
+@keyframes ecg-draw {
+  0% {
+    stroke-dashoffset: 320;
+  }
+  60% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -320;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+/* Respect reduced motion preference across the app */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible keyboard focus, always */
+:focus-visible {
+  outline: 2px solid var(--gx-teal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Utility: glass surface (used sparingly — cards, nav, floating panels) */
+.gx-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Utility: soft background grid, used behind hero / architecture sections */
+.gx-grid-bg {
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Utility: radial glow accents */
+.gx-glow-teal {
+  background: radial-gradient(
+    circle at 50% 0%,
+    color-mix(in srgb, var(--gx-teal) 22%, transparent),
+    transparent 60%
+  );
+}
+
+/* Utility: consistent hover lift for interactive/marketing cards */
+.gx-hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+.gx-hover-lift:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--gx-teal) 55%, var(--border));
+  box-shadow: 0 24px 48px -24px hsl(var(--shadow-color) / 0.4);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gx-hover-lift:hover {
+    transform: none;
+  }
+}
+
+/* Utility: skeleton loading shimmer (used by dashboard loading states) */
+.gx-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--background-alt);
+  border-radius: var(--radius-md);
+}
+.gx-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--foreground) 6%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gx-skeleton::after {
+    animation: none;
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gx-teal) 35%, transparent);
+  color: var(--foreground);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gx-teal);
+}
