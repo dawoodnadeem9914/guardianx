@@ -246,7 +246,7 @@ export function MedicalProfileClient({ userId, initialProfile }: MedicalProfileC
                 onChange={(e) => update("gender", e.target.value as Gender | "")}
                 className={selectClass}
               >
-                <option value="">Prefer not to say</option>
+
                 {genderOptions.map((g) => (
                   <option key={g.value} value={g.value}>
                     {g.label}

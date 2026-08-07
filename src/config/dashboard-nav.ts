@@ -21,8 +21,8 @@ export const dashboardNav: DashboardNavItem[] = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard, enabled: true },
   { label: "Report Emergency", href: "/dashboard/emergency", icon: Siren, enabled: false },
   { label: "Incident History", href: "/dashboard/history", icon: History, enabled: false },
-  { label: "Emergency Contacts", href: "/dashboard/contacts", icon: Users, enabled: false },
-  { label: "Medical Profile", href: "/dashboard/medical-profile", icon: ShieldPlus, enabled: false },
+  { label: "Emergency Contacts", href: "/dashboard/contacts", icon: Users, enabled: true },
+  { label: "Medical Profile", href: "/dashboard/medical-profile", icon: ShieldPlus, enabled: true },
   { label: "Simulation Mode", href: "/dashboard/simulation", icon: GraduationCap, enabled: false },
   { label: "Settings", href: "/dashboard/settings", icon: Settings, enabled: false },
 ];
