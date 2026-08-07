@@ -19,7 +19,7 @@ export interface DashboardNavItem {
 
 export const dashboardNav: DashboardNavItem[] = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard, enabled: true },
-  { label: "Report Emergency", href: "/dashboard/emergency", icon: Siren, enabled: false },
+  { label: "Report Emergency", href: "/dashboard/emergency", icon: Siren, enabled: true },
   { label: "Incident History", href: "/dashboard/history", icon: History, enabled: false },
   { label: "Emergency Contacts", href: "/dashboard/contacts", icon: Users, enabled: true },
   { label: "Medical Profile", href: "/dashboard/medical-profile", icon: ShieldPlus, enabled: true },

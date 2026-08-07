@@ -15,6 +15,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type Gender = "male" | "female" | "other" | "prefer_not_to_say";
 export type BloodType = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | "unknown";
+export type InputType = "image" | "text";
+export type Severity = "low" | "medium" | "high" | "critical";
 
 export interface Database {
   public: {
@@ -130,6 +132,51 @@ export interface Database {
         };
         Relationships: [];
       };
+      emergency_detections: {
+        Row: {
+          id: string;
+          user_id: string;
+          input_type: InputType;
+          input_summary: string;
+          emergency_type: string;
+          severity: Severity;
+          confidence: number;
+          evidence: string[];
+          reason: string | null;
+          verification_responses: Record<string, boolean> | null;
+          verified_confidence: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          input_type: InputType;
+          input_summary: string;
+          emergency_type: string;
+          severity: Severity;
+          confidence: number;
+          evidence?: string[];
+          reason?: string | null;
+          verification_responses?: Record<string, boolean> | null;
+          verified_confidence?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          input_type?: InputType;
+          input_summary?: string;
+          emergency_type?: string;
+          severity?: Severity;
+          confidence?: number;
+          evidence?: string[];
+          reason?: string | null;
+          verification_responses?: Record<string, boolean> | null;
+          verified_confidence?: number | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -143,3 +190,5 @@ export type MedicalProfile = Database["public"]["Tables"]["medical_profiles"]["R
 export type MedicalProfileInsert = Database["public"]["Tables"]["medical_profiles"]["Insert"];
 export type EmergencyContact = Database["public"]["Tables"]["emergency_contacts"]["Row"];
 export type EmergencyContactInsert = Database["public"]["Tables"]["emergency_contacts"]["Insert"];
+export type EmergencyDetection = Database["public"]["Tables"]["emergency_detections"]["Row"];
+export type EmergencyDetectionInsert = Database["public"]["Tables"]["emergency_detections"]["Insert"];
