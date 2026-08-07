@@ -16,10 +16,12 @@ import {
   CheckCircle2,
   ArrowRight,
   Gauge,
+  Radio,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getFirstAidProtocol } from "@/lib/ai/first-aid-protocols";
+import { getFirstAidProtocol, type EmergencyType } from "@/lib/ai/first-aid-protocols";
+import { SosStatusCard } from "@/components/sos/sos-status-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,22 +35,34 @@ export default async function DashboardOverviewPage() {
 
   if (!user) redirect("/login?next=/dashboard");
 
-  const [{ data: profile }, { data: medicalProfile }, { count: contactsCount }, { data: lastDetection }] =
-    await Promise.all([
-      supabase.from("profiles").select("full_name, created_at").eq("id", user.id).single(),
-      supabase.from("medical_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-      supabase
-        .from("emergency_contacts")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id),
-      supabase
-        .from("emergency_detections")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
+  const [
+    { data: profile },
+    { data: medicalProfile },
+    { count: contactsCount },
+    { data: lastDetection },
+    { data: latestSosRequest },
+  ] = await Promise.all([
+    supabase.from("profiles").select("full_name, created_at").eq("id", user.id).single(),
+    supabase.from("medical_profiles").select("*").eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("emergency_contacts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id),
+    supabase
+      .from("emergency_detections")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("sos_requests")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
   const greeting = timeOfDayGreeting();
@@ -157,7 +171,7 @@ export default async function DashboardOverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Sidebar column: Last detection + Medical profile status + AI Assistant preview */}
+        {/* Sidebar column: Last detection + Latest SOS + Medical profile status + AI Assistant preview */}
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
@@ -171,9 +185,7 @@ export default async function DashboardOverviewPage() {
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium text-foreground">
-                      {getFirstAidProtocol(
-                        lastDetection.emergency_type as Parameters<typeof getFirstAidProtocol>[0]
-                      ).label}
+                      {getFirstAidProtocol(lastDetection.emergency_type as EmergencyType).label}
                     </p>
                     <Badge variant={lastDetection.severity}>{lastDetection.severity}</Badge>
                   </div>
@@ -207,6 +219,53 @@ export default async function DashboardOverviewPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Latest SOS — status, emergency, Guardian Card/Report shortcuts */}
+          <div>
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground-subtle">
+              <Radio size={14} />
+              Latest SOS
+            </p>
+            {latestSosRequest ? (
+              <div className="flex flex-col gap-3">
+                <SosStatusCard
+                  status={latestSosRequest.status}
+                  emergencyLabel={
+                    getFirstAidProtocol(latestSosRequest.emergency_type as EmergencyType).label
+                  }
+                  severity={latestSosRequest.severity}
+                  confidence={latestSosRequest.confidence}
+                  createdAt={latestSosRequest.created_at}
+                  updatedAt={latestSosRequest.updated_at}
+                  contact={latestSosRequest.guardian_contact_snapshot}
+                  compact
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" asChild className="flex-1">
+                    <Link href="/dashboard/guardian-card">Guardian Card</Link>
+                  </Button>
+                  <Button size="sm" variant="secondary" asChild className="flex-1">
+                    <Link href="/dashboard/guardian-report">Guardian Report</Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-5">
+                  <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center">
+                    <p className="text-sm font-medium text-foreground">No SOS sent yet</p>
+                    <p className="mt-1 text-xs text-foreground-subtle">
+                      Your SOS status, Guardian Card, and Guardian Report will appear here once
+                      you send one.
+                    </p>
+                    <Button size="sm" className="mt-4" asChild>
+                      <Link href="/dashboard/sos">Go to SOS</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           <Card>
             <CardHeader>
@@ -275,10 +334,10 @@ export default async function DashboardOverviewPage() {
       <div className="flex items-start gap-3 rounded-xl border border-info/20 bg-info/[0.05] p-4 text-sm text-foreground-muted">
         <Info size={16} className="mt-0.5 shrink-0 text-info" />
         <p>
-          Milestone 3 is live: AI Emergency Detection (simulated) now runs end to end —
-          recognition, verification, explainable AI, and first aid — with results saved to your
-          account. Real AI, SOS, Campus Mode, and the rest of the GuardianX V3.0 specification
-          arrive in the milestones that follow.
+          Milestone 4 is live: SOS (hold-to-activate, 5-second countdown, simulated sending),
+          Guardian Card, and Guardian Report now run end to end — with an AI Safety Layer and
+          simulated Offline Mode on the SOS page. Real Twilio/Firebase delivery, GPT-4o mini, and
+          the rest of the GuardianX V3.0 specification arrive in the milestones that follow.
         </p>
       </div>
     </div>
