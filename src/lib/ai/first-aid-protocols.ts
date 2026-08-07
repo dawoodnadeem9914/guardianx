@@ -1,11 +1,17 @@
 /**
- * Static first-aid knowledge base for Milestone 3.
+ * Static first-aid knowledge base.
  *
  * This is the file that gets replaced when GuardianX moves to a real
  * RAG-grounded knowledge base (WHO / Red Cross / AHA protocols, per the
  * V3.0 specification). Everything that consumes first-aid content reads
  * it through `getFirstAidProtocol()`, so that swap won't require any
  * caller to change.
+ *
+ * Milestone 5 adds 5 new emergency types (burns, fire, earthquake,
+ * flood, road_accident) to support Simulation Mode's full scenario
+ * list. AI Emergency Detection (detect-emergency.ts) is unaffected —
+ * it only ever matched a subset of EmergencyType via keyword/hash
+ * profiles, so it doesn't need to cover every type in this union.
  */
 
 export type EmergencyType =
@@ -14,6 +20,11 @@ export type EmergencyType =
   | "choking"
   | "allergic_reaction"
   | "fracture"
+  | "burns"
+  | "fire"
+  | "earthquake"
+  | "flood"
+  | "road_accident"
   | "unclear";
 
 export interface FirstAidProtocol {
@@ -80,6 +91,61 @@ export const firstAidProtocols: Record<EmergencyType, FirstAidProtocol> = {
       "Apply a cold pack wrapped in cloth to reduce swelling, if available.",
       "Call your local emergency number for a suspected fracture that limits movement or breathing.",
       "Watch for signs of shock — pale skin, rapid breathing — while waiting for help.",
+    ],
+  },
+  burns: {
+    type: "burns",
+    label: "Burns",
+    steps: [
+      "Cool the burn under cool (not ice-cold) running water for 10 to 20 minutes.",
+      "Remove tight clothing or jewelry near the burn before swelling starts.",
+      "Cover the burn loosely with a clean, non-stick dressing.",
+      "Do not apply ice, butter, or ointments to the burn.",
+      "Call your local emergency number for burns larger than a hand, on the face, or that look deep.",
+    ],
+  },
+  fire: {
+    type: "fire",
+    label: "Fire",
+    steps: [
+      "Get everyone out of the building immediately — do not stop to gather belongings.",
+      "Stay low to the ground to avoid smoke inhalation.",
+      "Feel doors before opening — do not open a door that is hot to the touch.",
+      "Call your local emergency number once you are safely outside.",
+      "Go to the designated meeting point and do not re-enter the building for any reason.",
+    ],
+  },
+  earthquake: {
+    type: "earthquake",
+    label: "Earthquake",
+    steps: [
+      "Drop, cover, and hold on — get under sturdy furniture and protect your head and neck.",
+      "Stay away from windows, mirrors, and anything that could fall.",
+      "If outdoors, move to an open area away from buildings, trees, and power lines.",
+      "After shaking stops, check for injuries and hazards like gas leaks before moving.",
+      "Call your local emergency number if anyone is trapped or injured.",
+    ],
+  },
+  flood: {
+    type: "flood",
+    label: "Flood",
+    steps: [
+      "Move to higher ground immediately — do not wait to see how high the water rises.",
+      "Never walk or drive through moving flood water, even if it looks shallow.",
+      "Avoid contact with flood water — it may be contaminated or electrically charged.",
+      "Call your local emergency number if you are trapped or need rescue.",
+      "Once safe, avoid returning until officials confirm the area is safe.",
+    ],
+  },
+  road_accident: {
+    type: "road_accident",
+    label: "Road Accident",
+    steps: [
+      "Check for danger before approaching — turn on hazard lights and keep others away from traffic.",
+      "Call your local emergency number and describe how many people are involved and their condition.",
+      "Do not move injured people unless they are in immediate danger (e.g. fire, oncoming traffic).",
+      "Apply firm pressure to any severe bleeding while waiting for help.",
+      "Keep injured people calm and still until responders arrive.",
     ],
   },
   unclear: {

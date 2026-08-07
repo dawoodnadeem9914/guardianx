@@ -201,6 +201,8 @@ export interface Database {
           confidence: number;
           status: SosStatus | "cancelled";
           guardian_contact_snapshot: SosContactSnapshot | null;
+          eta_minutes: number | null;
+          assigned_hospital: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -214,6 +216,8 @@ export interface Database {
           confidence: number;
           status?: SosStatus | "cancelled";
           guardian_contact_snapshot?: SosContactSnapshot | null;
+          eta_minutes?: number | null;
+          assigned_hospital?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -227,6 +231,8 @@ export interface Database {
           confidence?: number;
           status?: SosStatus | "cancelled";
           guardian_contact_snapshot?: SosContactSnapshot | null;
+          eta_minutes?: number | null;
+          assigned_hospital?: string | null;
           created_at?: string;
           updated_at?: string;
         };

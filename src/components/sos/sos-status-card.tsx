@@ -1,4 +1,4 @@
-import { Phone } from "lucide-react";
+import { Phone, Clock, Building2 } from "lucide-react";
 import { getSosStatusMeta } from "@/lib/sos/status-service";
 import type { SosStatus } from "@/lib/sos/send-sos";
 import type { Severity } from "@/types/supabase";
@@ -19,7 +19,11 @@ export interface SosStatusCardProps {
   createdAt: string;
   updatedAt: string;
   contact: SosStatusCardContact | null;
-  /** Tighter spacing/typography for use inside the Dashboard's Latest SOS widget. */
+  /** Set once the simulated pipeline reaches "ambulance_en_route". */
+  etaMinutes?: number | null;
+  /** Set once the simulated pipeline reaches "hospital_assigned". */
+  assignedHospital?: string | null;
+  /** Tighter spacing/typography for use inside widgets (Dashboard, Family Updates, Hospital view). */
   compact?: boolean;
 }
 
@@ -40,6 +44,8 @@ export function SosStatusCard({
   createdAt,
   updatedAt,
   contact,
+  etaMinutes,
+  assignedHospital,
   compact = false,
 }: SosStatusCardProps) {
   const meta = getSosStatusMeta(status);
@@ -64,6 +70,31 @@ export function SosStatusCard({
           </div>
           <p className="mt-1.5 text-xs text-foreground-subtle">{meta.progress}% complete</p>
         </div>
+
+        {(etaMinutes != null || assignedHospital) && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {etaMinutes != null && (
+              <div className="flex items-center gap-2.5 rounded-xl border border-teal/25 bg-teal/[0.05] px-3.5 py-3">
+                <Clock size={16} className="shrink-0 text-teal-strong dark:text-teal" />
+                <div>
+                  <p className="text-xs text-foreground-subtle">Estimated arrival</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {etaMinutes === 0 ? "Arrived" : `${etaMinutes} min`}
+                  </p>
+                </div>
+              </div>
+            )}
+            {assignedHospital && (
+              <div className="flex items-center gap-2.5 rounded-xl border border-teal/25 bg-teal/[0.05] px-3.5 py-3">
+                <Building2 size={16} className="shrink-0 text-teal-strong dark:text-teal" />
+                <div>
+                  <p className="text-xs text-foreground-subtle">Assigned hospital</p>
+                  <p className="text-sm font-semibold text-foreground">{assignedHospital}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           <Row label="Emergency" value={emergencyLabel} />

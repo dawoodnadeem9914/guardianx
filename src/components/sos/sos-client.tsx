@@ -58,6 +58,8 @@ export function SosClient({
   const [phase, setPhase] = React.useState<Phase>("idle");
   const [countdown, setCountdown] = React.useState(COUNTDOWN_SECONDS);
   const [currentStatus, setCurrentStatus] = React.useState<SosStatus>("preparing");
+  const [etaMinutes, setEtaMinutes] = React.useState<number | null>(null);
+  const [assignedHospital, setAssignedHospital] = React.useState<string | null>(null);
   const [activeCreatedAt, setActiveCreatedAt] = React.useState<string | null>(null);
   const [activeUpdatedAt, setActiveUpdatedAt] = React.useState<string | null>(null);
 
@@ -137,6 +139,8 @@ export function SosClient({
     if (!latestDetection) return;
     setPhase("sending");
     setCurrentStatus("preparing");
+    setEtaMinutes(null);
+    setAssignedHospital(null);
 
     const supabase = createClient();
     const contactSnapshot: SosContactSnapshot | null = selectedContact
@@ -171,11 +175,20 @@ export function SosClient({
     setActiveCreatedAt(inserted.created_at);
     setActiveUpdatedAt(inserted.updated_at);
 
-    for await (const status of runSosSimulation()) {
-      setCurrentStatus(status);
+    for await (const event of runSosSimulation()) {
+      setCurrentStatus(event.status);
+      if (event.etaMinutes != null) setEtaMinutes(event.etaMinutes);
+      if (event.assignedHospital) setAssignedHospital(event.assignedHospital);
+
+      const updatePayload: { status: SosStatus; eta_minutes?: number; assigned_hospital?: string } = {
+        status: event.status,
+      };
+      if (event.etaMinutes != null) updatePayload.eta_minutes = event.etaMinutes;
+      if (event.assignedHospital) updatePayload.assigned_hospital = event.assignedHospital;
+
       const { data: updated } = await supabase
         .from("sos_requests")
-        .update({ status })
+        .update(updatePayload)
         .eq("id", inserted.id)
         .select()
         .single();
@@ -190,6 +203,8 @@ export function SosClient({
     setPhase("idle");
     setActiveCreatedAt(null);
     setActiveUpdatedAt(null);
+    setEtaMinutes(null);
+    setAssignedHospital(null);
   }
 
   return (
@@ -340,6 +355,8 @@ export function SosClient({
                 createdAt={latestSosRequest.created_at}
                 updatedAt={latestSosRequest.updated_at}
                 contact={latestSosRequest.guardian_contact_snapshot}
+                etaMinutes={latestSosRequest.eta_minutes}
+                assignedHospital={latestSosRequest.assigned_hospital}
                 compact
               />
             </div>
@@ -373,6 +390,8 @@ export function SosClient({
             confidence={displayConfidence ?? latestDetection.confidence}
             createdAt={activeCreatedAt ?? new Date().toISOString()}
             updatedAt={activeUpdatedAt ?? new Date().toISOString()}
+            etaMinutes={etaMinutes}
+            assignedHospital={assignedHospital}
             contact={
               selectedContact
                 ? {
@@ -392,7 +411,9 @@ export function SosClient({
             <CardHeader>
               <CardTitle className="text-base">SOS complete</CardTitle>
               <CardDescription>
-                Your Guardian Card and Guardian Report are ready to share with responders.
+                {assignedHospital
+                  ? `Care team notified at ${assignedHospital}. Your Guardian Card and Report are ready to share.`
+                  : "Your Guardian Card and Guardian Report are ready to share with responders."}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3 pt-0">
@@ -421,6 +442,8 @@ export function SosClient({
             confidence={displayConfidence ?? latestDetection.confidence}
             createdAt={activeCreatedAt ?? new Date().toISOString()}
             updatedAt={activeUpdatedAt ?? new Date().toISOString()}
+            etaMinutes={etaMinutes}
+            assignedHospital={assignedHospital}
             contact={
               selectedContact
                 ? {

@@ -115,8 +115,22 @@ export default async function DashboardOverviewPage() {
             badgeText="Start"
             badgeVariant="neutral"
           />
-          <QuickAction icon={GraduationCap} label="Simulation mode" accent="teal" />
-          <QuickAction icon={History} label="Incident history" accent="teal" />
+          <QuickAction
+            icon={GraduationCap}
+            label="Simulation mode"
+            accent="teal"
+            href="/dashboard/simulation"
+            badgeText="Practice"
+            badgeVariant="neutral"
+          />
+          <QuickAction
+            icon={History}
+            label="Incident history"
+            accent="teal"
+            href="/dashboard/history"
+            badgeText="View"
+            badgeVariant="neutral"
+          />
           <QuickAction
             icon={ShieldPlus}
             label="Medical profile"
@@ -238,6 +252,8 @@ export default async function DashboardOverviewPage() {
                   createdAt={latestSosRequest.created_at}
                   updatedAt={latestSosRequest.updated_at}
                   contact={latestSosRequest.guardian_contact_snapshot}
+                  etaMinutes={latestSosRequest.eta_minutes}
+                  assignedHospital={latestSosRequest.assigned_hospital}
                   compact
                 />
                 <div className="flex gap-2">
@@ -334,10 +350,11 @@ export default async function DashboardOverviewPage() {
       <div className="flex items-start gap-3 rounded-xl border border-info/20 bg-info/[0.05] p-4 text-sm text-foreground-muted">
         <Info size={16} className="mt-0.5 shrink-0 text-info" />
         <p>
-          Milestone 4 is live: SOS (hold-to-activate, 5-second countdown, simulated sending),
-          Guardian Card, and Guardian Report now run end to end — with an AI Safety Layer and
-          simulated Offline Mode on the SOS page. Real Twilio/Firebase delivery, GPT-4o mini, and
-          the rest of the GuardianX V3.0 specification arrive in the milestones that follow.
+          Milestone 5 is live: the Emergency Progress Tracker now carries ETA and hospital
+          assignment through the full lifecycle, Incident History has a complete Emergency
+          Replay view, and Simulation Mode, Family Live Updates, a Hospital Dashboard preview,
+          a Campus Dashboard, and a Voice Assistant are all reachable from the sidebar. Real
+          GPT-4o mini, Whisper, Twilio, and Firebase integrations remain the next milestone.
         </p>
       </div>
     </div>
