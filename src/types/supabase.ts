@@ -11,6 +11,7 @@
  */
 import type { SosStatus } from "@/lib/sos/send-sos";
 import type { GuardianReportData } from "@/lib/report/guardian-report";
+import type { Role } from "@/lib/auth/roles";
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -29,6 +30,13 @@ export interface SosContactSnapshot {
   name: string;
   relationship: string | null;
   phone: string;
+}
+
+/** What a linked family member is permitted to view, per relationship. */
+export interface FamilyPermissions {
+  view_emergency_status: boolean;
+  view_guardian_card: boolean;
+  view_medical_profile: boolean;
 }
 
 export interface Database {
@@ -298,9 +306,147 @@ export interface Database {
         };
         Relationships: [];
       };
+      roles: {
+        Row: {
+          user_id: string;
+          role: Role;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          role?: Role;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          role?: Role;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      family_invitations: {
+        Row: {
+          id: string;
+          inviter_user_id: string;
+          invitee_email: string | null;
+          relationship: string;
+          token: string;
+          status: "pending" | "accepted" | "expired" | "revoked";
+          permissions: FamilyPermissions;
+          expires_at: string;
+          created_at: string;
+          accepted_at: string | null;
+          accepted_by_user_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          inviter_user_id: string;
+          invitee_email?: string | null;
+          relationship: string;
+          token: string;
+          status?: "pending" | "accepted" | "expired" | "revoked";
+          permissions?: FamilyPermissions;
+          expires_at: string;
+          created_at?: string;
+          accepted_at?: string | null;
+          accepted_by_user_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          inviter_user_id?: string;
+          invitee_email?: string | null;
+          relationship?: string;
+          token?: string;
+          status?: "pending" | "accepted" | "expired" | "revoked";
+          permissions?: FamilyPermissions;
+          expires_at?: string;
+          created_at?: string;
+          accepted_at?: string | null;
+          accepted_by_user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      family_relationships: {
+        Row: {
+          id: string;
+          primary_user_id: string;
+          family_user_id: string;
+          relationship: string;
+          permissions: FamilyPermissions;
+          status: "active" | "revoked";
+          invitation_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          primary_user_id: string;
+          family_user_id: string;
+          relationship: string;
+          permissions?: FamilyPermissions;
+          status?: "active" | "revoked";
+          invitation_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          primary_user_id?: string;
+          family_user_id?: string;
+          relationship?: string;
+          permissions?: FamilyPermissions;
+          status?: "active" | "revoked";
+          invitation_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      activity_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          action: string;
+          metadata: Record<string, Json> | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          action: string;
+          metadata?: Record<string, Json> | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          action?: string;
+          metadata?: Record<string, Json> | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      accept_family_invitation: {
+        Args: { p_token: string };
+        Returns: Database["public"]["Tables"]["family_relationships"]["Row"];
+      };
+      get_invitation_preview: {
+        Args: { p_token: string };
+        Returns: {
+          relationship: string;
+          status: string;
+          expires_at: string;
+          inviter_full_name: string | null;
+        }[];
+      };
+      current_user_role: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
@@ -319,3 +465,11 @@ export type EmergencyReport = Database["public"]["Tables"]["emergency_reports"][
 export type EmergencyReportInsert = Database["public"]["Tables"]["emergency_reports"]["Insert"];
 export type AiFeedback = Database["public"]["Tables"]["ai_feedback"]["Row"];
 export type AiFeedbackInsert = Database["public"]["Tables"]["ai_feedback"]["Insert"];
+export type UserRoleRow = Database["public"]["Tables"]["roles"]["Row"];
+export type FamilyInvitation = Database["public"]["Tables"]["family_invitations"]["Row"];
+export type FamilyInvitationInsert = Database["public"]["Tables"]["family_invitations"]["Insert"];
+export type FamilyRelationship = Database["public"]["Tables"]["family_relationships"]["Row"];
+export type FamilyRelationshipInsert =
+  Database["public"]["Tables"]["family_relationships"]["Insert"];
+export type ActivityLog = Database["public"]["Tables"]["activity_logs"]["Row"];
+export type ActivityLogInsert = Database["public"]["Tables"]["activity_logs"]["Insert"];

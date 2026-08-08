@@ -10,16 +10,25 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/dashboard/user-menu";
 import { Badge } from "@/components/ui/badge";
 import { dashboardNav } from "@/config/dashboard-nav";
+import { hasRole, type Role } from "@/lib/auth/roles";
 import { cn } from "@/lib/utils";
 
 interface TopNavProps {
   email: string;
   fullName: string | null;
+  /** Optional — threaded to UserMenu for logout logging. See UserMenu's own doc comment. */
+  userId?: string;
+  /** Optional — threaded to the mobile drawer's nav list, same filtering behavior as Sidebar. */
+  role?: Role;
 }
 
-export function TopNav({ email, fullName }: TopNavProps) {
+export function TopNav({ email, fullName, userId, role }: TopNavProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const pathname = usePathname();
+
+  const visibleNav = dashboardNav.filter(
+    (item) => !item.requiredRole || !role || hasRole(role, item.requiredRole)
+  );
 
   // Accessibility: let Escape close the mobile drawer, matching expected
   // dialog behavior for an overlay with a backdrop.
@@ -50,7 +59,7 @@ export function TopNav({ email, fullName }: TopNavProps) {
 
       <div className="flex items-center gap-2.5">
         <ThemeToggle />
-        <UserMenu email={email} fullName={fullName} />
+        <UserMenu email={email} fullName={fullName} userId={userId} />
       </div>
 
       {/* Mobile sidebar drawer */}
@@ -90,7 +99,7 @@ export function TopNav({ email, fullName }: TopNavProps) {
               </div>
               <nav className="flex-1 overflow-y-auto px-3 py-5">
                 <ul className="flex flex-col gap-1">
-                  {dashboardNav.map((item) => {
+                  {visibleNav.map((item) => {
                     const isActive = pathname === item.href;
                     const Icon = item.icon;
                     if (!item.enabled) {

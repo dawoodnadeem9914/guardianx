@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CheckCircle2, XCircle, ArrowRight, Info, Stethoscope } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getUserRole, hasRole } from "@/lib/auth/roles";
 import { getFirstAidProtocol, type EmergencyType } from "@/lib/ai/first-aid-protocols";
 import { getEmergencyTimeline } from "@/lib/report/emergency-timeline";
 import { SosStatusCard } from "@/components/sos/sos-status-card";
@@ -19,6 +20,13 @@ export default async function HospitalViewPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login?next=/dashboard/hospital-view");
+
+  // Belt-and-suspenders with middleware.ts: middleware already redirects
+  // non-hospital/non-admin users away from this path, but this Server
+  // Component check is what actually prevents the page from rendering,
+  // matching every other role-sensitive page in this milestone.
+  const role = await getUserRole(supabase, user.id);
+  if (!hasRole(role, ["hospital"])) redirect("/dashboard");
 
   const [{ data: latestSosRequest }, { data: medicalProfile }, { data: profile }, { data: topContact }] =
     await Promise.all([
@@ -87,9 +95,10 @@ export default async function HospitalViewPage() {
       <div className="flex items-start gap-3 rounded-xl border border-info/20 bg-info/[0.05] p-4 text-sm text-foreground-muted">
         <Info size={16} className="mt-0.5 shrink-0 text-info" />
         <p>
-          This is a simulated hospital-facing view using your real account data. A separate
-          login for hospital staff isn&apos;t built yet — for now, this is exactly what they
-          would be shown.
+          This view is restricted to accounts with the Hospital role, assigned by an
+          administrator — there&apos;s no public sign-up flow for hospital staff yet. The data
+          shown is your own account&apos;s, standing in for a real incoming patient until
+          hospital-side patient lookup is built.
         </p>
       </div>
 

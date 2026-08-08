@@ -1,14 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, ArrowRight, Info } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getFirstAidProtocol, type EmergencyType } from "@/lib/ai/first-aid-protocols";
-import { SosStatusCard } from "@/components/sos/sos-status-card";
-import { GuardianCardClient } from "@/components/guardian-card/guardian-card-client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { FamilyClient, type EnrichedRelationship } from "@/components/family/family-client";
 
-export const metadata = { title: "Family Live Updates" };
+export const metadata = { title: "Family Updates" };
 
 export default async function FamilyUpdatesPage() {
   const supabase = await createClient();
@@ -19,162 +13,84 @@ export default async function FamilyUpdatesPage() {
 
   if (!user) redirect("/login?next=/dashboard/family-updates");
 
-  const [
-    { data: latestSosRequest },
-    { data: medicalProfile },
-    { data: profile },
-    { data: topContact },
-  ] = await Promise.all([
-    supabase
-      .from("sos_requests")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase.from("medical_profiles").select("*").eq("user_id", user.id).maybeSingle(),
-    supabase.from("profiles").select("full_name").eq("id", user.id).single(),
-    supabase
-      .from("emergency_contacts")
-      .select("name, relationship, phone")
-      .eq("user_id", user.id)
-      .order("priority", { ascending: true })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const [{ data: sentInvitations }, { data: monitoringMeRaw }, { data: monitoredByMeRaw }] =
+    await Promise.all([
+      supabase
+        .from("family_invitations")
+        .select("*")
+        .eq("inviter_user_id", user.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false }),
+      // Relationships where I am the primary user — people who can see MY data.
+      supabase
+        .from("family_relationships")
+        .select("*")
+        .eq("primary_user_id", user.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false }),
+      // Relationships where I am the family user — people whose data I can see.
+      supabase
+        .from("family_relationships")
+        .select("*")
+        .eq("family_user_id", user.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false }),
+    ]);
 
-  const patientName = medicalProfile?.full_name || profile?.full_name || "Not set";
+  // Batch-fetch the "other party" profile name for every relationship in
+  // one query rather than N+1 — RLS (migration 0010) allows reading a
+  // linked family member's basic profile in either direction.
+  const otherPartyIds = new Set<string>();
+  (monitoringMeRaw ?? []).forEach((r) => otherPartyIds.add(r.family_user_id));
+  (monitoredByMeRaw ?? []).forEach((r) => otherPartyIds.add(r.primary_user_id));
+
+  const nameById = new Map<string, string>();
+  if (otherPartyIds.size > 0) {
+    const { data: otherProfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", Array.from(otherPartyIds));
+
+    (otherProfiles ?? []).forEach((p) => {
+      nameById.set(p.id, p.full_name || "Unnamed user");
+    });
+  }
+
+  const monitoringMe: EnrichedRelationship[] = (monitoringMeRaw ?? []).map((r) => ({
+    id: r.id,
+    otherPartyUserId: r.family_user_id,
+    otherPartyName: nameById.get(r.family_user_id) ?? "Unnamed user",
+    relationship: r.relationship,
+    permissions: r.permissions,
+    createdAt: r.created_at,
+  }));
+
+  const monitoredByMe: EnrichedRelationship[] = (monitoredByMeRaw ?? []).map((r) => ({
+    id: r.id,
+    otherPartyUserId: r.primary_user_id,
+    otherPartyName: nameById.get(r.primary_user_id) ?? "Unnamed user",
+    relationship: r.relationship,
+    permissions: r.permissions,
+    createdAt: r.created_at,
+  }));
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Family Live Updates
+          Family Updates
         </h1>
         <p className="mt-1.5 text-sm text-foreground-muted">
-          A preview of what{" "}
-          {latestSosRequest?.guardian_contact_snapshot?.name ?? "your emergency contact"} would
-          see during an active SOS.
+          Invite family members to monitor your emergency status, and manage who can see what.
         </p>
       </div>
 
-      <div className="flex items-start gap-3 rounded-xl border border-info/20 bg-info/[0.05] p-4 text-sm text-foreground-muted">
-        <Info size={16} className="mt-0.5 shrink-0 text-info" />
-        <p>
-          This page shows a simulated family-facing view using your real account data. A
-          separate login for family members isn&apos;t built yet — for now, this is exactly what
-          they would be shown.
-        </p>
-      </div>
-
-      {latestSosRequest ? (
-        <>
-          <SosStatusCard
-            status={latestSosRequest.status}
-            emergencyLabel={
-              getFirstAidProtocol(latestSosRequest.emergency_type as EmergencyType).label
-            }
-            severity={latestSosRequest.severity}
-            confidence={latestSosRequest.confidence}
-            createdAt={latestSosRequest.created_at}
-            updatedAt={latestSosRequest.updated_at}
-            contact={latestSosRequest.guardian_contact_snapshot}
-            etaMinutes={latestSosRequest.eta_minutes}
-            assignedHospital={latestSosRequest.assigned_hospital}
-          />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Guardian Report</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-foreground-muted">
-                  The full incident summary, evidence, and timeline.
-                </p>
-                <Button size="sm" variant="secondary" className="mt-4" asChild>
-                  <Link href="/dashboard/guardian-report">
-                    View Guardian Report
-                    <ArrowRight size={14} />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Users size={16} className="text-teal-strong dark:text-teal" />
-                  Contact information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {latestSosRequest.guardian_contact_snapshot ? (
-                  <div className="text-sm">
-                    <p className="font-medium text-foreground">
-                      {latestSosRequest.guardian_contact_snapshot.name}
-                      {latestSosRequest.guardian_contact_snapshot.relationship && (
-                        <span className="ml-1.5 font-normal text-foreground-muted">
-                          ({latestSosRequest.guardian_contact_snapshot.relationship})
-                        </span>
-                      )}
-                    </p>
-                    <p className="mt-1 text-foreground-muted">
-                      {latestSosRequest.guardian_contact_snapshot.phone}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-foreground-muted">
-                    No contact was selected for this SOS.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      ) : (
-        <Card className="flex flex-col items-center gap-3 border-dashed p-10 text-center">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-teal/10 text-teal-strong dark:text-teal">
-            <Users size={20} />
-          </span>
-          <div>
-            <p className="text-sm font-medium text-foreground">No active SOS</p>
-            <p className="mt-1 text-sm text-foreground-muted">
-              Family Live Updates will appear here once an SOS is sent.
-            </p>
-          </div>
-          <Button size="sm" className="mt-1" asChild>
-            <Link href="/dashboard/sos">Go to SOS</Link>
-          </Button>
-        </Card>
-      )}
-
-      <div>
-        <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-subtle">
-          Guardian Card
-        </p>
-        <GuardianCardClient
-          patientName={patientName}
-          dateOfBirth={medicalProfile?.date_of_birth ?? null}
-          bloodType={medicalProfile?.blood_type ?? null}
-          allergies={medicalProfile?.allergies ?? null}
-          conditions={medicalProfile?.conditions ?? null}
-          medications={medicalProfile?.medications ?? null}
-          emergencyContact={topContact ?? null}
-          detection={
-            latestSosRequest
-              ? {
-                  label: getFirstAidProtocol(latestSosRequest.emergency_type as EmergencyType)
-                    .label,
-                  severity: latestSosRequest.severity,
-                  confidence: latestSosRequest.confidence,
-                  detectedAt: latestSosRequest.created_at,
-                }
-              : null
-          }
-          hasMedicalProfile={Boolean(medicalProfile)}
-        />
-      </div>
+      <FamilyClient
+        userId={user.id}
+        initialSentInvitations={sentInvitations ?? []}
+        initialMonitoringMe={monitoringMe}
+        monitoredByMe={monitoredByMe}
+      />
     </div>
   );
 }

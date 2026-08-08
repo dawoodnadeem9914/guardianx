@@ -5,10 +5,18 @@ import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { LogOut, User as UserIcon, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { logActivity } from "@/lib/logging/activity-log";
 
 interface UserMenuProps {
   email: string;
   fullName: string | null;
+  /**
+   * Optional — when provided, "logout" is recorded to activity_logs
+   * before the session ends (it must happen before signOut(), since
+   * the insert policy requires an authenticated auth.uid()). Omitting
+   * it simply skips logging; sign-out itself is unaffected either way.
+   */
+  userId?: string;
 }
 
 function getInitials(name: string | null, email: string) {
@@ -19,13 +27,16 @@ function getInitials(name: string | null, email: string) {
   return email[0]?.toUpperCase() ?? "?";
 }
 
-export function UserMenu({ email, fullName }: UserMenuProps) {
+export function UserMenu({ email, fullName, userId }: UserMenuProps) {
   const router = useRouter();
   const [signingOut, setSigningOut] = React.useState(false);
 
   async function handleSignOut() {
     setSigningOut(true);
     const supabase = createClient();
+    if (userId) {
+      await logActivity(supabase, userId, "logout");
+    }
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();

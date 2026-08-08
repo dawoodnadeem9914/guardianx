@@ -5,10 +5,26 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { dashboardNav } from "@/config/dashboard-nav";
+import { hasRole, type Role } from "@/lib/auth/roles";
 import { cn } from "@/lib/utils";
 
-export function Sidebar() {
+interface SidebarProps {
+  /**
+   * Optional — when provided, items whose `requiredRole` the user
+   * doesn't hold are hidden entirely (not shown-and-disabled — that
+   * treatment is reserved for features that simply aren't built yet).
+   * Omitting this prop shows every enabled item, matching this
+   * component's behavior before role-based navigation existed.
+   */
+  role?: Role;
+}
+
+export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
+
+  const visibleNav = dashboardNav.filter(
+    (item) => !item.requiredRole || !role || hasRole(role, item.requiredRole)
+  );
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-background-alt lg:flex">
@@ -20,7 +36,7 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 py-5">
         <ul className="flex flex-col gap-1">
-          {dashboardNav.map((item) => {
+          {visibleNav.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
 

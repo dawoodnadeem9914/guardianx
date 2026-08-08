@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Activity, CheckCircle2, FileBarChart, Info, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getUserRole, hasRole } from "@/lib/auth/roles";
 import { computeCampusStats } from "@/lib/campus/campus-stats";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,13 @@ export default async function CampusDashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login?next=/dashboard/campus-dashboard");
+
+  // Belt-and-suspenders with middleware.ts: middleware already redirects
+  // non-campus_admin/non-admin users away from this path, but this
+  // Server Component check is what actually prevents the page from
+  // rendering, matching every other role-sensitive page in this milestone.
+  const role = await getUserRole(supabase, user.id);
+  if (!hasRole(role, ["campus_admin"])) redirect("/dashboard");
 
   const [{ data: detections }, { data: sosRequests }] = await Promise.all([
     supabase.from("emergency_detections").select("*").eq("user_id", user.id),
@@ -47,9 +55,9 @@ export default async function CampusDashboardPage() {
       <div className="flex items-start gap-3 rounded-xl border border-info/20 bg-info/[0.05] p-4 text-sm text-foreground-muted">
         <Info size={16} className="mt-0.5 shrink-0 text-info" />
         <p>
-          These statistics reflect real data on your own account — GuardianX doesn&apos;t yet
-          have multi-user campus roles, so this is an honest &quot;campus of one&quot; view rather
-          than fabricated numbers, until real institutional deployment exists.
+          This dashboard is restricted to accounts with the Campus Admin role, assigned by an
+          administrator. The statistics below still reflect your own account&apos;s data — real
+          multi-campus aggregation across many users is a later milestone, not yet built.
         </p>
       </div>
 
